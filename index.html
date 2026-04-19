@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lumira AI - لوميرا</title>
+    <title>لوميرا - Lumira AI</title>
     <script src="https://sdk.minepi.com/pi-sdk.js"></script>
     <style>
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background-color: #121212;
             color: white;
+            font-family: Arial, sans-serif;
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -18,100 +18,74 @@
             margin: 0;
             text-align: center;
         }
-        h1 { color: #fff; margin-bottom: 10px; }
-        p { color: #ccc; margin-bottom: 30px; }
+        h1 { margin-bottom: 10px; }
+        p { color: #ccc; margin-bottom: 30px; padding: 0 20px; }
         .btn-pay {
-            background-color: #ffc107;
-            color: #000;
+            background-color: #ffa500;
+            color: black;
             border: none;
             padding: 15px 30px;
             font-size: 18px;
             font-weight: bold;
             border-radius: 10px;
             cursor: pointer;
-            transition: 0.3s;
-            box-shadow: 0 4px 15px rgba(255, 193, 7, 0.3);
+            box-shadow: 0 4px 15px rgba(255, 165, 0, 0.3);
         }
-        .btn-pay:hover { background-color: #e0a800; transform: scale(1.05); }
-        #status { margin-top: 20px; font-size: 16px; font-weight: bold; padding: 10px; }
-        .error { color: #ff4444; }
-        .success { color: #00ff00; }
-        .loading { color: #ffc107; }
+        #status-msg { margin-top: 20px; color: #ff4444; font-size: 14px; }
     </style>
 </head>
 <body>
 
     <h1>مرحباً بك في لوميرا</h1>
-    <p>تطبيق المرأة الذكية لتجربة الملابس والماكياج بالذكاء الاصطناعي</p>
+    <p>تطبيق المرأة الذكية لتجربة الملابس والمكياج بالذكاء الاصطناعي</p>
 
-    <button class="btn-pay" onclick="transferPi()">تجربة الخدمة بـ 0.1 Pi</button>
+    <button class="btn-pay" onclick="handlePayment()">تجربة الخدمة بـ 0.1 Pi</button>
     
-    <div id="status"></div>
+    <div id="status-msg"></div>
 
     <script>
-        // تهيئة الـ SDK بالـ ID الخاص بتطبيقك لضمان الربط الرسمي
+        // 1. تهيئة الـ SDK (الخطوة اللي كانت بتسبب الخطأ)
         const Pi = window.Pi;
-        Pi.init({ 
-            version: "2.0", 
-            sandbox: false,
-            app_id: "6c882541-6c55-4793-9815-e65f4fa8ff44" 
-        });
+        Pi.init({ version: "2.0", sandbox: true });
 
-        async function transferPi() {
-            const statusDiv = document.getElementById('status');
+        // 2. التحقق من دخول المستخدم فور فتح الصفحة
+        async function authUser() {
             try {
-                statusDiv.className = "loading";
-                statusDiv.innerText = "جاري الاتصال بمحفظة Pi...";
-
-                const payment = await Pi.createPayment({
-                    amount: 0.1,
-                    memo: "تجربة تطبيق لوميرا للذكاء الاصطناعي",
-                    metadata: { service: "virtual_try_on" },
-                }, {
-                    onReadyForServerApproval: function(paymentId) {
-                        console.log("طلب الاعتماد من السيرفر لعملية: " + paymentId);
-                        // الربط مع الفانكشن المسؤولة عن الموافقة في Netlify
-                        fetch(`/.netlify/functions/approve-payment?paymentId=${paymentId}`, {
-                            method: 'POST'
-                        })
-                        .then(res => {
-                            if (!res.ok) throw new Error("السيرفر رفض العملية - تأكد من الـ API Key");
-                            return res.json();
-                        })
-                        .then(data => {
-                            statusDiv.className = "loading";
-                            statusDiv.innerText = "تم الاعتماد بنجاح، بانتظار توقيعك في المحفظة...";
-                        })
-                        .catch(err => {
-                            statusDiv.className = "error";
-                            statusDiv.innerText = "خطأ في السيرفر: تأكد من إعداد المفاتيح السريعة.";
-                            console.error(err);
-                        });
-                    },
-                    onReadyForServerCompletion: function(paymentId, txid) {
-                        // إرسال تأكيد العملية النهائية للسيرفر لإكمال المعاملة
-                        fetch(`/.netlify/functions/complete-payment?paymentId=${paymentId}&txid=${txid}`, {
-                            method: 'POST'
-                        });
-                        statusDiv.className = "success";
-                        statusDiv.innerText = "مبروك يا هندسة! تم الدفع بنجاح. جاري فتح لوميرا...";
-                    },
-                    onCancel: function(paymentId) {
-                        statusDiv.className = "error";
-                        statusDiv.innerText = "تم إلغاء العملية من قبلك.";
-                    },
-                    onError: function(error, payment) {
-                        statusDiv.className = "error";
-                        statusDiv.innerText = "فشلت العملية.. تأكد من وجود رصيد Testnet كافٍ.";
-                        console.error(error);
-                    }
-                });
+                const scopes = ['username', 'payments'];
+                function onIncompletePaymentFound(payment) {
+                    console.log("دفعة معلقة مكتشفة:", payment);
+                };
+                const user = await Pi.authenticate(scopes, onIncompletePaymentFound);
+                console.log("تم تسجيل دخول المستخدم:", user.username);
             } catch (err) {
-                console.error(err);
-                statusDiv.className = "error";
-                statusDiv.innerText = "حدث خطأ غير متوقع.. يرجى إعادة المحاولة.";
+                document.getElementById('status-msg').innerText = "يرجى فتح التطبيق من داخل Pi Browser";
             }
         }
+
+        // 3. وظيفة الدفع (الزر الأصفر)
+        async function handlePayment() {
+            try {
+                const payment = await Pi.createPayment({
+                    amount: 0.1,
+                    memo: "تجربة لوميرا الذكية",
+                    metadata: { project: "Lumira_AI" },
+                }, {
+                    onReadyForServerApproval: (paymentId) => {
+                        console.log("في انتظار موافقة السيرفر:", paymentId);
+                    },
+                    onReadyForServerCompletion: (paymentId, txid) => {
+                        alert("تمت العملية بنجاح! شكراً لاستخدامك لوميرا.");
+                    },
+                    onCancel: (paymentId) => { console.log("تم الإلغاء"); },
+                    onError: (error, payment) => { console.error("خطأ:", error); },
+                });
+            } catch (err) {
+                alert("فشل بدء عملية الدفع. تأكد من توفر الرصيد.");
+            }
+        }
+
+        // تشغيل التحقق تلقائياً
+        authUser();
     </script>
 </body>
 </html>
