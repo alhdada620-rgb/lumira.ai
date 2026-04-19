@@ -1,6 +1,5 @@
 {
-  "version": "2.0",
-  "app_id": "lumira",
-  "name": "Lumira",
-  "app_website_url": "https://monumental-halva-d00d65.netlify.app"
+  "app_url": "https://lumira-ai-a55840.netlify.app/",
+  "sandbox": true,
+  "app_id": "lumira-ai"
 }
