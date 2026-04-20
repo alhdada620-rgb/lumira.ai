@@ -3,89 +3,104 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>لوميرا - Lumira AI</title>
+    <title>Lumira AI | لوميرا ذكاء اصطناعي</title>
     <script src="https://sdk.minepi.com/pi-sdk.js"></script>
     <style>
         body {
-            background-color: #121212;
+            background-color: #0d0d0d;
             color: white;
-            font-family: Arial, sans-serif;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
             height: 100vh;
             margin: 0;
-            text-align: center;
+            overflow: hidden;
         }
-        h1 { margin-bottom: 10px; }
-        p { color: #ccc; margin-bottom: 30px; padding: 0 20px; }
+        .container {
+            text-align: center;
+            padding: 20px;
+            border: 2px solid #9b4dff;
+            border-radius: 20px;
+            background: rgba(155, 77, 255, 0.1);
+            box-shadow: 0 0 20px rgba(155, 77, 255, 0.5);
+        }
+        h1 { color: #9b4dff; margin-bottom: 10px; }
+        p { font-size: 1.1rem; color: #ccc; }
         .btn-pay {
-            background-color: #ffa500;
-            color: black;
+            background-color: #ffcc00;
+            color: #000;
             border: none;
             padding: 15px 30px;
-            font-size: 18px;
+            font-size: 1.2rem;
             font-weight: bold;
-            border-radius: 10px;
+            border-radius: 50px;
             cursor: pointer;
-            box-shadow: 0 4px 15px rgba(255, 165, 0, 0.3);
+            transition: 0.3s;
+            box-shadow: 0 4px 15px rgba(255, 204, 0, 0.4);
         }
-        #status-msg { margin-top: 20px; color: #ff4444; font-size: 14px; }
+        .btn-pay:hover { transform: scale(1.05); background-color: #e6b800; }
+        #status { margin-top: 20px; font-size: 0.9rem; color: #ff4d4d; }
     </style>
 </head>
 <body>
 
-    <h1>مرحباً بك في لوميرا</h1>
-    <p>تطبيق المرأة الذكية لتجربة الملابس والمكياج بالذكاء الاصطناعي</p>
-
-    <button class="btn-pay" onclick="handlePayment()">تجربة الخدمة بـ 0.1 Pi</button>
-    
-    <div id="status-msg"></div>
+    <div class="container">
+        <h1>LUMIRA AI</h1>
+        <p>مرحباً بك في لوميرا - مرآتك الذكية</p>
+        <button class="btn-pay" onclick="transferPi()">تجربة الخدمة بـ 0.1 Pi</button>
+        <div id="status"></div>
+    </div>
 
     <script>
-        // 1. تهيئة الـ SDK (الخطوة اللي كانت بتسبب الخطأ)
         const Pi = window.Pi;
         Pi.init({ version: "2.0", sandbox: true });
 
-        // 2. التحقق من دخول المستخدم فور فتح الصفحة
-        async function authUser() {
+        async function transferPi() {
+            const statusDiv = document.getElementById('status');
+            statusDiv.style.color = "#ffcc00";
+            statusDiv.innerText = "جاري الاتصال بالمحفظة...";
+
             try {
                 const scopes = ['username', 'payments'];
-                function onIncompletePaymentFound(payment) {
-                    console.log("دفعة معلقة مكتشفة:", payment);
-                };
-                const user = await Pi.authenticate(scopes, onIncompletePaymentFound);
-                console.log("تم تسجيل دخول المستخدم:", user.username);
-            } catch (err) {
-                document.getElementById('status-msg').innerText = "يرجى فتح التطبيق من داخل Pi Browser";
-            }
-        }
-
-        // 3. وظيفة الدفع (الزر الأصفر)
-        async function handlePayment() {
-            try {
-                const payment = await Pi.createPayment({
+                const auth = await Pi.authenticate(scopes, onIncompletePaymentFound);
+                
+                const paymentData = {
                     amount: 0.1,
-                    memo: "تجربة لوميرا الذكية",
-                    metadata: { project: "Lumira_AI" },
-                }, {
+                    memo: "تجربة تطبيق لوميرا للذكاء الاصطناعي",
+                    metadata: { app: "Lumira-AI" }
+                };
+
+                const callbacks = {
                     onReadyForServerApproval: (paymentId) => {
-                        console.log("في انتظار موافقة السيرفر:", paymentId);
+                        statusDiv.style.color = "#00ffcc";
+                        statusDiv.innerText = "تم تجهيز الدفع! رقم العملية: " + paymentId;
                     },
                     onReadyForServerCompletion: (paymentId, txid) => {
-                        alert("تمت العملية بنجاح! شكراً لاستخدامك لوميرا.");
+                        statusDiv.innerText = "تم الدفع بنجاح! شكراً لك.";
                     },
-                    onCancel: (paymentId) => { console.log("تم الإلغاء"); },
-                    onError: (error, payment) => { console.error("خطأ:", error); },
-                });
+                    onCancel: (paymentId) => {
+                        statusDiv.style.color = "#ff4d4d";
+                        statusDiv.innerText = "تم إلغاء عملية الدفع.";
+                    },
+                    onError: (error, payment) => {
+                        statusDiv.style.color = "#ff4d4d";
+                        statusDiv.innerText = "خطأ في الدفع: " + error.message;
+                    }
+                };
+
+                await Pi.createPayment(paymentData, callbacks);
+
             } catch (err) {
-                alert("فشل بدء عملية الدفع. تأكد من توفر الرصيد.");
+                statusDiv.style.color = "#ff4d4d";
+                statusDiv.innerText = "فشل المصادقة: " + err.message;
             }
         }
 
-        // تشغيل التحقق تلقائياً
-        authUser();
+        function onIncompletePaymentFound(payment) {
+            console.log("هناك عملية دفع معلقة: ", payment);
+        };
     </script>
 </body>
 </html>
