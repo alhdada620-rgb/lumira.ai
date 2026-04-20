@@ -14,53 +14,68 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            height: 100vh;
+            min-height: 100vh;
             margin: 0;
-            overflow: hidden;
         }
         .container {
             text-align: center;
-            padding: 20px;
+            padding: 30px;
             border: 2px solid #9b4dff;
-            border-radius: 20px;
-            background: rgba(155, 77, 255, 0.1);
-            box-shadow: 0 0 20px rgba(155, 77, 255, 0.5);
+            border-radius: 25px;
+            background: rgba(155, 77, 255, 0.05);
+            box-shadow: 0 0 30px rgba(155, 77, 255, 0.3);
+            max-width: 400px;
         }
-        h1 { color: #9b4dff; margin-bottom: 10px; }
-        p { font-size: 1.1rem; color: #ccc; }
+        /* تنسيق صور التطبيق */
+        .app-logo {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            margin-bottom: 20px;
+            border: 3px solid #9b4dff;
+            object-fit: cover;
+        }
+        h1 { color: #9b4dff; margin-bottom: 10px; font-size: 2rem; }
+        p { font-size: 1rem; color: #ccc; line-height: 1.6; }
         .btn-pay {
             background-color: #ffcc00;
             color: #000;
             border: none;
-            padding: 15px 30px;
+            padding: 15px 40px;
             font-size: 1.2rem;
             font-weight: bold;
             border-radius: 50px;
             cursor: pointer;
             transition: 0.3s;
-            box-shadow: 0 4px 15px rgba(255, 204, 0, 0.4);
+            margin-top: 20px;
+            box-shadow: 0 4px 15px rgba(255, 204, 0, 0.3);
         }
         .btn-pay:hover { transform: scale(1.05); background-color: #e6b800; }
-        #status { margin-top: 20px; font-size: 0.9rem; color: #ff4d4d; }
+        #status { margin-top: 20px; font-size: 0.9rem; font-weight: bold; }
     </style>
 </head>
 <body>
 
     <div class="container">
+        <img src="https://via.placeholder.com/150" alt="Lumira Logo" class="app-logo">
+        
         <h1>LUMIRA AI</h1>
-        <p>مرحباً بك في لوميرا - مرآتك الذكية</p>
-        <button class="btn-pay" onclick="transferPi()">تجربة الخدمة بـ 0.1 Pi</button>
+        <p>مرحباً بك في لوميرا - مرآتك الذكية<br>اكتشف عالم الذكاء الاصطناعي بلمسة واحدة</p>
+        
+        <button class="btn-pay" onclick="transferPi()">ابدأ الآن بـ 0.1 Pi</button>
+        
         <div id="status"></div>
     </div>
 
     <script>
         const Pi = window.Pi;
+        // تفعيل وضع الـ Sandbox لربط الخطوة رقم 6 في البورتال
         Pi.init({ version: "2.0", sandbox: true });
 
         async function transferPi() {
             const statusDiv = document.getElementById('status');
             statusDiv.style.color = "#ffcc00";
-            statusDiv.innerText = "جاري الاتصال بالمحفظة...";
+            statusDiv.innerText = "جاري الاتصال بمحفظة Pi...";
 
             try {
                 const scopes = ['username', 'payments'];
@@ -68,25 +83,28 @@
                 
                 const paymentData = {
                     amount: 0.1,
-                    memo: "تجربة تطبيق لوميرا للذكاء الاصطناعي",
-                    metadata: { app: "Lumira-AI" }
+                    // عنوان المحفظة الجديد الذي استخرجناه من البورتال
+                    recipient: "GA6BJEVLKKHLQ6LIMXXJMLJME2DAGXMFBDFNKVEGSGWUCEDZN62QXSTF",
+                    memo: "اشتراك لوميرا ذكاء اصطناعي",
+                    metadata: { app: "Lumira-AI-Official" }
                 };
 
                 const callbacks = {
                     onReadyForServerApproval: (paymentId) => {
                         statusDiv.style.color = "#00ffcc";
-                        statusDiv.innerText = "تم تجهيز الدفع! رقم العملية: " + paymentId;
+                        statusDiv.innerText = "تم إرسال الطلب.. بانتظار الموافقة.";
                     },
                     onReadyForServerCompletion: (paymentId, txid) => {
-                        statusDiv.innerText = "تم الدفع بنجاح! شكراً لك.";
+                        statusDiv.style.color = "#00ffcc";
+                        statusDiv.innerText = "مبروك! تم الدفع بنجاح.";
                     },
                     onCancel: (paymentId) => {
                         statusDiv.style.color = "#ff4d4d";
-                        statusDiv.innerText = "تم إلغاء عملية الدفع.";
+                        statusDiv.innerText = "تم إلغاء العملية.";
                     },
                     onError: (error, payment) => {
                         statusDiv.style.color = "#ff4d4d";
-                        statusDiv.innerText = "خطأ في الدفع: " + error.message;
+                        statusDiv.innerText = "عذراً، حدث خطأ: " + error.message;
                     }
                 };
 
@@ -94,12 +112,12 @@
 
             } catch (err) {
                 statusDiv.style.color = "#ff4d4d";
-                statusDiv.innerText = "فشل المصادقة: " + err.message;
+                statusDiv.innerText = "فشل تسجيل الدخول: " + err.message;
             }
         }
 
         function onIncompletePaymentFound(payment) {
-            console.log("هناك عملية دفع معلقة: ", payment);
+            console.log("هناك عملية معلقة: ", payment);
         };
     </script>
 </body>
